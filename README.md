@@ -20,6 +20,7 @@ If you'd prefer to download it the utility and load it into your browser locally
     - And of course `static/img/chat-reader-logo.png` so you don't have ae broken imnage in the header
 - Open that file in Google Chrome
 - Select the directory containing your _uncompressed_ Google Chat Takeout files (this won't work on `.zip` or `.tgz` files -- you need to unzip them first)
+- Grant permission for your browser to view the files on the file system
 - See your chats
 
 That's it!
@@ -36,5 +37,6 @@ Shout out to the project **Hangouts Reader** at https://github.com/Jessecar96/ha
 ## PRs welcome
 Though I can't promise quick turnaround on reviews...
 
+Enjoy!
 
 _-- Michael Richman_
