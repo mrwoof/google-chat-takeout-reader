@@ -2,14 +2,19 @@
 
 ## Introduction
 
-Some time in mid to late 2023, Google ceased Takeout support for **Hangouts** and converted it to **Google Chat**. In that transition, the format of the JSON output files changed as well.
-
 This repo contains a simple, client-side reader for Google Chat Takeout JSON files.
 
-## Notes
 This is a pure javascript utility. Nothing is uploaded to the internet. It all runs on your local machine.
 
 ## How to use the Google Chat Takeout Reader
+
+### Step 1
+Download and unzip Google Chat files from Google Takeout at https://takeout.google.com/.
+
+### Step 2
+
+Use the **Google Chat Takeout Reader** to view them.
+
 You can use the hosted version of this utility by clicking here: https://mrwoof.github.io/google-chat-takeout-reader/google_chat_takeout_reader.html
 
 **- OR -**
@@ -33,7 +38,9 @@ That's it!
 
 ## Acknowledgements
 
-Shout out to the project **Hangouts Reader** at https://github.com/Jessecar96/hangouts-reader/. I had previously used that utility and added enhancements locally. I was going to contribute to that project, but when Google completely changed the JSON structure of Taketous for Google Chat, I wrote a new one from scratch and that's what is contained in this repo.
+Shout out to the project **Hangouts Reader** at https://github.com/Jessecar96/hangouts-reader/. 
+
+I had previously used that utility. I was going to contribute enhancements to that project, but Google changed the JSON structure of Takeout files when they transitioned from **Hangouts** to **Google Chat**, I wrote a new reader from scratch which is what is contained in this repo.
 
 ## PRs welcome
 
