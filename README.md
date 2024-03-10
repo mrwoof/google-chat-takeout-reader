@@ -14,10 +14,10 @@ You can use the hosted version of this utility by clicking here: https://mrwoof.
 
 **- OR -**
 
-If you'd prefer to download it the utility and load it into your browser locally, do the following:
+If you'd prefer to download the utility and load it into your browser locally, do the following:
 
 - Download the file `google_chat_takeout_reader.html`
-    - And of course `static/img/chat-reader-logo.png` so you don't have ae broken imnage in the header
+    - And of course `static/img/chat-reader-logo.png` so you don't have a broken imnage in the header
 - Open that file in Google Chrome
 - Select the directory containing your _uncompressed_ Google Chat Takeout files (this won't work on `.zip` or `.tgz` files -- you need to unzip them first)
 - Grant permission for your browser to view the files on the file system
@@ -27,15 +27,19 @@ That's it!
 
 
 ## Technical Notes
-- This code only works with Google Chrome to my knowledge, due to its use of `window.showDirectoryPicker` -- not all browsers support directory selection.
+- To my knowledge, this code only works with Google Chrome due to its use of `window.showDirectoryPicker()` -- not all browsers support directory selection.
 - This code was only tested on MacOS.
 - Uses Bootstrap 5.3.0 and jquery 3.6.0, sourced from public URLs
 
 ## Acknowledgements
-Shout out to the project **Hangouts Reader** at https://github.com/Jessecar96/hangouts-reader/. I had previously used this utility and had modified it locally. I was going to contribute to it, but when Google completely changed the JSON structure, I wrote a new one from scratch.
+
+Shout out to the project **Hangouts Reader** at https://github.com/Jessecar96/hangouts-reader/. I had previously used that utility and added enhancements locally. I was going to contribute to that project, but when Google completely changed the JSON structure of Taketous for Google Chat, I wrote a new one from scratch and that's what is contained in this repo.
 
 ## PRs welcome
+
 Though I can't promise quick turnaround on reviews...
+
+<br>
 
 Enjoy!
 
