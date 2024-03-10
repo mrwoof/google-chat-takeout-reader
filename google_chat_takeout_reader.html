@@ -271,6 +271,7 @@
 
         async function showChatList() {
             await pickDirectory();
+            console.log("Chats loaded")
 
             const chatList = $('#chatList');
 
@@ -316,8 +317,10 @@
         }
 
         async function listFilesRecursive(directoryHandle, chatList, prefix = '') {
+            console.log("Looking for chats in ", directoryHandle.name);
             for await (const entry of directoryHandle.values()) {
                 const itemPath = `${prefix}${entry.name}`;
+                // console.log("processing ", itemPath);
                 if (entry.kind === 'file') {
                     if (entry.name.endsWith('messages.json')) {
                         addChatMessagesEntry(itemPath, entry);
