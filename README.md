@@ -13,6 +13,7 @@ This is a pure javascript utility. Nothing is uploaded to the internet. It all r
 - Download the file `google_chat_takeout_reader.html`
 - Open that file in Google Chrome
 - Select the directory containing your _uncompressed_ Google Chat Takeout files (this won't work on `.zip` or `.tgz` files -- you need to unzip them first)
+- See your chats
 
 That's it!
 
