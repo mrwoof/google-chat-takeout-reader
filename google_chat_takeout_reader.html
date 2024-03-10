@@ -181,7 +181,6 @@
             const parts = filePath.split('/');
 
             // Return the second-to-last element
-            console.log(parts); 
             if (parts.length < 2) {
                 return ".";
             }   
@@ -219,7 +218,6 @@
 
         function getImgSrcPath(chatId, filename) {
             const file = fileCache[chatId][filename];
-            console.log(file);
             try {
                 return URL.createObjectURL(file);
             } catch (e) {
@@ -261,9 +259,9 @@
                     continue;
                 }
                 for (const file of msg.attached_files) {
-                    console.log("image file before: ", file);
+                    // console.log("image file before: ", file);
                     const imgFile = convertImageFilename(chatId, file.export_name);
-                    console.log("converted filename: ", imgFile);
+                    // console.log("converted filename: ", imgFile);
                     file.export_name = imgFile;
                 }
             }
@@ -431,7 +429,7 @@
                 }
                 if ("attached_files" in json.messages[i]) {
                     for (const file of json.messages[i].attached_files) {
-                        console.log("showing file: ", file);
+                        // console.log("showing file: ", file);
                         const imgSrc = getImgSrcPath(chatId, file.export_name);
                         message += `<a href="${imgSrc}" target="_blank"><img src="${imgSrc}" class="thumbnail"></a><br>`;
                     }
