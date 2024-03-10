@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Google Takeout | Google Chat Reader</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 20px;
+        }
+        h1.page_header {
+            display: block;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #ccc;
+            vertical-align: middle;
+            line-height: 60px;
+        }
+        h1.page_header img {
+            max-width: 60px;
+            max-height: 60px;
+            float: right;
+        }
+        #chatList {
+            font-size: 12pt;
+        }
+        #chatList li:hover {
+            background-color: #f0f0f0;
+        }
+        .show-opts {
+            font-size: 8pt;
+            font-weight: normal;
+            background-color: #fefefe;
+            display: inline-block;
+        }
+        .show-opts a {
+            text-decoration: none;
+        }
+        .show-opts a:hover {
+            text-decoration: underline;
+        }
+        .chat-opts {
+            font-size: 10pt;
+            background-color: #ccc;
+            display: none;
+            margin-top: 5px;
+            padding: 10px;
+        }
+        .chat-opts form .form-check-input {
+            vertical-align: top;
+        }
+        .jump-to-msg {
+            display: inline-block;
+            vertical-align: top;
+        }
+        .jump-to-msg button {
+            font-size: 9pt;
+            line-height: 16px;
+        }
+        .jump-to-msg input {
+            vertical-align: top;
+            font-size: 9pt;
+            width: 70px;
+        }
+        .opts-btn {
+            margin-top: 5px;    
+            font-size: 8pt;
+            padding: .25rem;
+
+        }
+        #chat_header {
+            background-color: #198754;
+            color: #fff;
+            display: none;
+            padding: 10px;
+            //border-radius: 5px;
+            margin-bottom: 10px;
+
+        }
+        #chat {
+            white-space: pre-wrap;
+            padding: 10px;
+            font-size: 11pt;
+            border: 1px solid #000;
+            margin-bottom: 30px;
+        }
+        #chat img.thumbnail {
+            max-width: 40%;
+        }
+        #chat div.reactions {
+            background-color: #efefef;
+            display: inline-block;
+            margin-left: 3pt;
+        }
+        #chat div.reactions p {
+            margin: 0;
+            padding: 3pt 3pt 0 3pt;
+            display: inline-block;
+        }
+        .nav {
+            padding: 6pt;
+            background-color: #ececec;
+        }
+        .nav.top {
+            margin-bottom: 10pt;
+        }
+    </style>
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="row header_container">
+            <h1 class="page_header">Google Takeout | Google Chat Reader
+            <img src="static/img/cat-reader-logo.png" alt="Chat Reader">
+            </h1>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <button id="select-directory" class="btn btn-success btn-sm">Select Takeout Directory</button>
+                <ul id="chatList" class="list-group mt-3"><i>Choose the directory of uncompressed Takeout files</i></ul>
+            </div>
+            <div class="col-md-8">
+                <h5 id="chat_header"></h5>
+                <div id="chat" class="border rounded"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMetadataEntries = {};
+        const chatMessageFiles = {};
+        const fileCache = {};
+        const imgCache = {};
+        const chatMessageCache = {};
+
+        const extensionRegex = /\.[0-9a-z]+$/i;
+
+        async function addChatMetadataEntry(itemPath, entry) {
+            const file = await entry.getFile();
+            const text = await file.text();
+            const json = JSON.parse(text);
+
+            const chatId = getDirectoryName(itemPath);
+            chatMetadataEntries[chatId] = {members: json.members};
+            if ("name" in json) {
+                chatMetadataEntries[chatId].name = json.name;
+            }
+
+            // set up imgCache for this chatId
+            imgCache[chatId] = {};
+        }
+
+        function escapeFilename(filename) {
+            if (!extensionRegex.test(filename)) {
+                // default to jpg. some extensions are missing in messagess.json
+                // but the files exported have .jpg ext
+                filename += ".jpg";
+            }
+            return filename.replace(/[\?:]/g, '_');
+        }
+
+        function convertImageFilename(chatId, filename) {
+            let imgFile = escapeFilename(filename);
+            imgCache[chatId][imgFile] = (imgCache[chatId][imgFile] || 0) + 1;
+
+            if (imgCache[chatId][imgFile] > 1) {
+                let imgIdx = imgCache[chatId][imgFile] - 1;
+                let imgExt = imgFile.substring(imgFile.lastIndexOf('.'));
+                let imgBase = imgFile.substring(0, imgFile.lastIndexOf('.'));
+                imgFile = `${imgBase}(${imgIdx})${imgExt}`;
+            }
+
+            return imgFile;
+        }
+
+        function getDirectoryName(filePath) {
+            const parts = filePath.split('/');
+
+            // Return the second-to-last element
+            console.log(parts); 
+            if (parts.length < 2) {
+                return ".";
+            }   
+
+            return parts[parts.length - 2].replace(/\s/g, "-");
+        }
+
+        function addChatMessagesEntry(itemPath, entry) {
+            const chatId = getDirectoryName(itemPath);
+            chatMessageFiles[chatId] = entry;
+        }
+
+        function formatTimestamp(timestamp) {
+            if (timestamp == undefined) {
+                return "";
+            }
+
+            // Format is "Thursday, July 14, 2016 at 5:04:34 PM UTC"
+            timestamp = timestamp.replace(' at ', ' ')
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+
+        async function addToFileCache(itemPath, entry) {
+            const chatId = getDirectoryName(itemPath);
+
+            // initialize fileCache for this chatId
+            if (!(chatId in fileCache)) {
+                fileCache[chatId] = {};
+            }
+
+            file = await entry.getFile();
+            fileCache[chatId][entry.name] = file;
+        }
+
+        function getImgSrcPath(chatId, filename) {
+            const file = fileCache[chatId][filename];
+            console.log(file);
+            try {
+                return URL.createObjectURL(file);
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+
+        function getChatMembersTitle(chatId) {
+            if (chatMetadataEntries[chatId] == undefined) {
+                // TODO what the hell?
+                return "unknown";
+            }
+
+            if ("name" in chatMetadataEntries[chatId]) {
+                return chatMetadataEntries[chatId].name;
+            }
+
+            return getChatMembers(chatId).join(" • ");
+        }
+
+        function getChatMembers(chatId) {
+            if (chatMetadataEntries[chatId] == undefined) {
+                // TODO what the hell?
+                return [];
+            }
+
+            return chatMetadataEntries[chatId].members.map(member => member.name);
+        }
+
+
+        function showOptsForm(chatId) {
+            $('#opts-' + chatId).toggle();
+        }
+
+        function preprocessImages(chatId, msgsJson) {
+            for (const msg of msgsJson.messages) {
+                if (!("attached_files" in msg)) {
+                    continue;
+                }
+                for (const file of msg.attached_files) {
+                    console.log("image file before: ", file);
+                    const imgFile = convertImageFilename(chatId, file.export_name);
+                    console.log("converted filename: ", imgFile);
+                    file.export_name = imgFile;
+                }
+            }
+
+            return msgsJson;
+        }
+
+        async function showChatList() {
+            await pickDirectory();
+
+            const chatList = $('#chatList');
+
+            if (Object.keys(chatMessageFiles).length == 0) {
+                chatList.append(`<br><i>No chats found</i>`);
+                return;
+            }
+
+            chatList.empty();
+            chatList.append($('<h6 class="mt-3">Select chat to view</h6>'));  
+            for (const chatId in chatMessageFiles) {
+                const listItem = $('<li class="list-group-item"></li>').html(`<a href="#" onclick="readAndDisplayJsonFile('${chatId}')">${getChatMembersTitle(chatId)}</a> <span class="show-opts badge"><a href="#" onclick="showOptsForm('${chatId}')">opts</a></span>`);
+                const formDiv = $(`<div class="chat-opts" id="opts-${chatId}"></div`);
+                const formItem = $(`<form id="opts-form-${chatId}" onsubmit="readAndDisplayJsonFile('${chatId}')"></form>`);
+                formItem.append(`
+                            <input type="checkbox" id="imagesOnly-${chatId}" name="imagesOnly" class="form-check-input">
+                            <label for="imagesOnly">Images Only</label>`);
+                for (const member of getChatMembers(chatId)) {
+                    formItem.append(`
+                            <br>
+                            <input type="checkbox" data-exclude-name="${member}" name="exclude" class="form-check-input">
+                            <label for="exclude">Hide ${member} messages</label>`);
+                }
+                formDiv.append(formItem);
+                formDiv.append(`<button class="opts-btn btn btn-secondary btn-sm" onclick="readAndDisplayJsonFile('${chatId}')"">Apply</button>`)
+                listItem.append(formDiv);
+                chatList.append(listItem);
+            }
+        }
+
+        async function pickDirectory() {
+            const chatList = $('#chatList');
+            try {
+                const directoryHandle = await window.showDirectoryPicker({startIn: "downloads"});
+                $('#chat').empty();
+                $('#chat_header').hide();
+                chatList.html(`<i>Loading chats...</i>`);
+                await listFilesRecursive(directoryHandle, chatList);
+            } catch (err) {
+                console.error(`Error: ${err}`);
+                chatList.html(`<i>Error: ${err.message}</i>`);
+            }
+        }
+
+        async function listFilesRecursive(directoryHandle, chatList, prefix = '') {
+            for await (const entry of directoryHandle.values()) {
+                const itemPath = `${prefix}${entry.name}`;
+                if (entry.kind === 'file') {
+                    if (entry.name.endsWith('messages.json')) {
+                        addChatMessagesEntry(itemPath, entry);
+                    } else if (entry.name.endsWith('group_info.json')) {
+                        addChatMetadataEntry(itemPath, entry);
+                    } else {
+                        await addToFileCache(itemPath, entry);
+                    }
+                } else if (entry.kind === 'directory') {
+                    if (entry.name.startsWith('.') || entry.name === 'Users') {
+                        continue;
+                    }
+                    await listFilesRecursive(entry, chatList, itemPath + '/');
+                }
+            }
+        }
+        
+        async function goToMessage(chatId) {
+            const messageNum = $(`#goToMessage`).val().replace(/,/g, '');
+            let i = parseInt(messageNum);
+
+            if (isNaN(i)) {
+                alert("Unfortunately not a number: " + messageNum);
+                return;
+            } else if (i < 1) {
+                i = 0;
+            }
+
+            await readAndDisplayJsonFile(chatId, {start: i - 1});
+        }
+
+        async function readAndDisplayJsonFile(chatId, opts = {}) {
+            if (!(chatId in chatMessageCache)) {
+                console.log(`Reading and parsing ${chatId} messages.json`);
+                const entry = chatMessageFiles[chatId];
+                $('#chat_header').text(getChatMembersTitle(chatId));
+                $('#chat_header').show();
+    
+                const chatBox = $('#chat');
+                chatBox.html('<i>Loading messages...</i>');
+    
+                const file = await entry.getFile();
+                const text = await file.text();
+                chatMessageCache[chatId] = preprocessImages(chatId, JSON.parse(text));
+            }
+
+            window.scrollTo(0, 0);
+            const chatBox = $('#chat');
+            chatBox.empty();
+
+            const json = chatMessageCache[chatId];
+            const max = Math.min(5000, json.messages.length);
+
+            const imagesOnly = $('#imagesOnly-' + chatId).is(':checked');
+
+            let excludeSenders = {};
+            for (const member of getChatMembers(chatId)) {
+                if ($(`#opts-form-${chatId} input[data-exclude-name="${member}"]`).is(':checked')) {
+                    excludeSenders[member] = true;
+                }
+            }
+
+            let start = ("start" in opts) ? opts.start : 0;
+
+            if (start >= json.messages.length) {
+                start = json.messages.length - max;
+            }
+
+            const end = Math.min(start + max, json.messages.length);
+
+            console.log(`Displaying ${max} messages from ${start} to ${json.messages.length}`);
+            for (let i = start; i < end; i++) {
+                const nextNav = $(`<a href="#" onclick="readAndDisplayJsonFile('${chatId}', {start: ${end} })">Next starting at ${(end + 1).toLocaleString("en")} of ${json.messages.length.toLocaleString("en")}</a>`);
+
+                if (json.messages.length > max  && i === start) {
+                    const navItem = $('<div class="nav top small"></div>');
+                    navItem.append(`Showing messages ${(start + 1).toLocaleString("en")} to ${end.toLocaleString("en")} of ${json.messages.length.toLocaleString("en")}`);
+
+                    if (start > 0) {
+                        navItem.append(` | <a href="#" onclick="readAndDisplayJsonFile('${chatId}', {start: ${Math.max(0, start - max)} })">Previous ${max.toLocaleString("en")} of ${json.messages.length.toLocaleString("en")}</a></b>`);
+                    }
+
+                    if (end + 1 < json.messages.length) {
+                        navItem.append(" | ");
+                        navItem.append(nextNav);
+                    }
+
+                    navItem.append(` | <div class="jump-to-msg">Jump to message <input type="text" size=4 id="goToMessage">`);
+                    navItem.append(`<button class="btn-secondary btn-sm" onclick="goToMessage('${chatId}')">Go</button></div>`); 
+                    chatBox.append(navItem);
+
+                    $("#goToMessage").on('keyup', function (e) {
+                        if (e.key === 'Enter' || e.keyCode === 13) {
+                            goToMessage(chatId);
+                        }
+                    });
+                }   
+
+                if (json.messages[i].creator.name in excludeSenders) {
+                    continue;
+                }
+                if (imagesOnly && !("attached_files" in json.messages[i])) {
+                    continue;
+                }
+
+                let message = `<b>${json.messages[i].creator.name}</b> ${formatTimestamp(json.messages[i].created_date)}<br>`;
+                if ("text" in json.messages[i]) {
+                    message += `${json.messages[i].text}<br>`;
+                }
+                if ("attached_files" in json.messages[i]) {
+                    for (const file of json.messages[i].attached_files) {
+                        console.log("showing file: ", file);
+                        const imgSrc = getImgSrcPath(chatId, file.export_name);
+                        message += `<a href="${imgSrc}" target="_blank"><img src="${imgSrc}" class="thumbnail"></a><br>`;
+                    }
+                }
+                if ("reactions" in json.messages[i]) {
+                    message += `<div class="reactions">`;
+                    for (const reaction of json.messages[i].reactions) {
+                        message += `<p title="${reaction.reactor_emails}">${reaction.emoji.unicode}</p>`;
+                    }
+                    message += `</div><br>`;
+                }
+
+                message += `<br>`;
+
+                chatBox.append(message);
+
+                if (end < json.messages.length && i === end - 1) {
+                    const navItem = $('<div class="nav small"></div>');
+                    navItem.append(nextNav);
+                    chatBox.append(navItem);
+                }
+            }
+        }
+
+        $(document).ready(function() {
+            $('#select-directory').click(showChatList);
+        });
+    </script>
+</body>
+</html>
