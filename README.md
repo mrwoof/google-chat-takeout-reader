@@ -21,8 +21,7 @@ You can use the hosted version of this utility by clicking here: https://mrwoof.
 
 If you'd prefer to download the utility and load it into your browser locally, do the following:
 
-- Download the file <a href="https://raw.githubusercontent.com/mrwoof/google-chat-takeout-reader/main/google_chat_takeout_reader.html" target="_blank">`google_chat_takeout_reader.html`</a>
-    - And of course download <a href="https://github.com/mrwoof/google-chat-takeout-reader/blob/main/static/img/chat-reader-logo.png" target="_blank">`static/img/chat-reader-logo.png`</a> so you don't have a broken image in the header
+- Download the file <a href="https://raw.githubusercontent.com/mrwoof/google-chat-takeout-reader/main/google_chat_takeout_reader.html" target="_new">`google_chat_takeout_reader.html`</a>
 - Open that file in Google Chrome
 - Select the directory containing your _uncompressed_ Google Chat Takeout files (this won't work on `.zip` or `.tgz` files -- you need to unzip them first)
 - Grant permission for your browser to view the files on the file system
