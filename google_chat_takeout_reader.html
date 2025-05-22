@@ -356,8 +356,6 @@
             if (!(chatId in chatMessageCache)) {
                 console.log(`Reading and parsing ${chatId} messages.json`);
                 const entry = chatMessageFiles[chatId];
-                $('#chat_header').text(getChatMembersTitle(chatId));
-                $('#chat_header').show();
     
                 const chatBox = $('#chat');
                 chatBox.html('<i>Loading messages...</i>');
@@ -366,6 +364,9 @@
                 const text = await file.text();
                 chatMessageCache[chatId] = preprocessImages(chatId, JSON.parse(text));
             }
+
+            $('#chat_header').text(getChatMembersTitle(chatId));
+            $('#chat_header').show();
 
             window.scrollTo(0, 0);
             const chatBox = $('#chat');
